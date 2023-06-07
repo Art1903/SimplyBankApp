@@ -92,9 +92,9 @@ const createNicknames = function (accs) {
 
 createNicknames(accounts);
 
-const displayBalance = function (transactions) {
-  const balance = transactions.reduce((acc, trans) => acc + trans, 0);
-
+const displayBalance = function (account) {
+  const balance = account.transactions.reduce((acc, trans) => acc + trans, 0);
+  account.balance = balance;
   labelBalance.textContent = `${balance}$`;
 };
 
@@ -121,6 +121,17 @@ const displayTotal = function (account) {
   labelSumInterest.textContent = `${interestTotal}$`;
 };
 
+const updateUi = function(account) {
+   // Display transactions
+   displayTransactions(account.transactions);
+
+   // Display balance
+   displayBalance(account);
+
+   // Display tolal
+   displayTotal(account);
+}
+
 let currentAccount;
 
 // Login in account and display informations
@@ -143,13 +154,31 @@ btnLogin.addEventListener("click", function (e) {
     inputLoginPin.value = "";
     inputLoginPin.blur();
 
-    // Display transactions
-    displayTransactions(currentAccount.transactions);
+   updateUi(currentAccount)
+  }
+});
 
-    // Display balance
-    displayBalance(currentAccount.transactions);
+// Create buttom transfer to another account
+btnTransfer.addEventListener("click", function (e) {
+  e.preventDefault();
 
-    // Display tolal
-    displayTotal(currentAccount);
+  const transferAmount = Number(inputTransferAmount.value);
+  const recipientNickname = inputTransferTo.value;
+  const recipientAccount = accounts.find(
+    (account) => account.nickname === recipientNickname
+  );
+
+  inputTransferTo.value = '';
+  inputTransferAmount.value = '';
+
+  if (
+    transferAmount > 0 &&
+    currentAccount.balance >= transferAmount &&
+    recipientAccount &&
+    currentAccount.nickname !== recipientAccount.nickname
+  ) {
+    currentAccount.transactions.push(-transferAmount);
+    recipientAccount.transactions.push(transferAmount);
+    updateUi(currentAccount);
   }
 });
