@@ -237,14 +237,36 @@ const updateUi = function (account) {
   displayTotal(account);
 };
 
-let currentAccount;
+let currentAccount, currentLogOutTimer;
 
-// Always logged in
-currentAccount = account1;
-updateUi(currentAccount);
-containerApp.style.opacity = 100;
+const startLogoutTimer = function () {
+  const logOutTimerCallback = function () {
+    const minutes = String(Math.trunc(time / 60)).padStart(2, "0");
+    const seconds = String(time % 60).padStart(2, "0");
 
-// Login in account and display informations
+    // В кожному виклику відображати чай який залишився в UI
+    labelTimer.textContent = `${minutes}:${seconds}`;
+
+    // Після завершення часу зупинити таймер і вийти з додатку
+    if (time === 0) {
+      clearInterval(logOutTimer);
+      containerApp.style.opacity = 0;
+
+      labelWelcome.textContent = "Увійдіть в свій акаунт";
+    }
+    time--;
+  };
+  // Встановити час виходу через 5 хвилин
+  let time = 300;
+
+  // Виклик таймеру кожну секунду
+  logOutTimerCallback();
+  const logOutTimer = setInterval(logOutTimerCallback, 1000);
+
+  return logOutTimer;
+};
+
+// Event Handlers
 
 btnLogin.addEventListener("click", function (e) {
   e.preventDefault();
@@ -259,13 +281,6 @@ btnLogin.addEventListener("click", function (e) {
     labelWelcome.textContent = `Раді що Ви знову з нами, ${
       currentAccount.userName.split(" ")[0]
     }!`;
-
-    // const now = new Date();
-    // const day = `${now.getDate()}`.padStart(2, "0");
-    // const month = `${now.getMonth() + 1}`.padStart(2, "0");
-    // const year = now.getFullYear();
-
-    // labelDate.textContent = `${day}/${month}/${year}`;
 
     const now = new Date();
     const options = {
@@ -286,6 +301,10 @@ btnLogin.addEventListener("click", function (e) {
     inputLoginUsername.value = "";
     inputLoginPin.value = "";
     inputLoginPin.blur();
+
+    // Check if the timer exist
+    if (currentLogOutTimer) clearInterval(currentLogOutTimer);
+    currentLogOutTimer = startLogoutTimer();
 
     updateUi(currentAccount);
   }
@@ -321,6 +340,10 @@ btnTransfer.addEventListener("click", function (e) {
     recipientAccount.transactionsDates.push(new Date().toISOString());
 
     updateUi(currentAccount);
+
+    // Reset the timer
+    clearInterval(currentLogOutTimer);
+    currentLogOutTimer = startLogoutTimer();
   }
 });
 
@@ -356,12 +379,18 @@ btnLoan.addEventListener("click", function (e) {
       (trans) => trans >= (loanAmount * 10) / 100
     )
   ) {
-    currentAccount.transactions.push(loanAmount);
-    currentAccount.transactionsDates.push(new Date().toISOString());
+    setTimeout(() => {
+      currentAccount.transactions.push(loanAmount);
+      currentAccount.transactionsDates.push(new Date().toISOString());
 
-    updateUi(currentAccount);
+      updateUi(currentAccount);
+    }, 3000);
   }
   inputLoanAmount.value = "";
+
+  // Reset the timer
+  clearInterval(currentLogOutTimer);
+  currentLogOutTimer = startLogoutTimer();
 });
 
 let transactionsSorted = false;
@@ -372,17 +401,9 @@ btnSort.addEventListener("click", function (e) {
   transactionsSorted = !transactionsSorted;
 });
 
-// Array.from() example
-
-// const logoImage = document.querySelector(".logo");
-// logoImage.addEventListener("click", function () {
 const transactionsUi = document.querySelectorAll(".transactions__value");
 const transactionsUiArray = Array.from(transactionsUi);
 console.log(transactionsUiArray.map((elem) => +elem.textContent));
-
-// const transactionsUiArray = Array.from(transactionsUi, elem => Number(elem.textContent));
-// console.log(transactionsUiArray);
-//});
 
 const logoImage = document.querySelector(".logo");
 logoImage.addEventListener("click", function () {
